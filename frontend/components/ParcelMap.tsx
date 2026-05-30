@@ -8,6 +8,7 @@ type ParcelMapProps = {
   apiKey: string;
   initialCenter?: LatLng;
   onPolygonChange: (polygon: { geojson: any; center: LatLng; area_m2: number } | null) => void;
+  purpose?: "plot" | "irrigation";
 };
 
 declare global {
@@ -17,14 +18,18 @@ declare global {
 }
 
 function areMapsLoaded() {
-  return typeof window !== "undefined" && !!window.google?.maps;
+  return typeof window !== "undefined" && !!window.google?.maps?.importLibrary;
 }
 
-export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.3816 }, onPolygonChange }: ParcelMapProps) {
+export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.3816 }, onPolygonChange, purpose = "plot" }: ParcelMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<any>(null);
   const polygonRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const mapClassRef = useRef<any>(null);
+  const markerClassRef = useRef<any>(null);
+  const polygonClassRef = useRef<any>(null);
+  const sphericalRef = useRef<any>(null);
   const [status, setStatus] = useState("Cargando mapa...");
   const [points, setPoints] = useState<LatLng[]>([]);
   const [areaMeters, setAreaMeters] = useState<number | null>(null);
@@ -32,15 +37,19 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
 
   const instructions = useMemo(
     () => ({
-      title: points.length ? "Edita tu parcela" : "Marca los puntos de tu parcela",
+      title: points.length
+        ? purpose === "irrigation" ? "Edita la zona de riego" : "Edita tu parcela"
+        : purpose === "irrigation" ? "Delimita la zona de riego" : "Marca los puntos de tu parcela",
       subtitle: points.length
-        ? "Haz click sobre el mapa para agregar otro vértice. Pulsa Guardar parcela cuando termines."
-        : "Haz click sobre el mapa para agregar vértices. Necesitas al menos 3 puntos.",
+        ? "Haz click sobre el mapa para agregar otro vertice. Usa Limpiar para empezar de nuevo."
+        : "Haz click sobre el mapa para agregar vertices. Necesitas al menos 3 puntos.",
     }),
-    [points.length]
+    [points.length, purpose]
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!apiKey) {
       setStatus("Falta la clave de Google Maps. Configura NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.");
       return;
@@ -48,9 +57,30 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
 
     if (!mapRef.current || mapInstance.current) return;
 
-    const initializeMap = () => {
+    const initializeMap = async () => {
       const google = window.google;
-      mapInstance.current = new google.maps.Map(mapRef.current!, {
+      if (!google?.maps?.importLibrary) return;
+
+      try {
+        const [mapsLibrary, geometryLibrary] = await Promise.all([
+          google.maps.importLibrary("maps"),
+          google.maps.importLibrary("geometry"),
+        ]);
+        const markerLibrary = await google.maps.importLibrary("marker").catch(() => null);
+
+        if (cancelled || !mapRef.current || mapInstance.current) return;
+
+        mapClassRef.current = mapsLibrary.Map;
+        polygonClassRef.current = mapsLibrary.Polygon;
+        markerClassRef.current = markerLibrary?.Marker ?? google.maps.Marker ?? null;
+        sphericalRef.current = geometryLibrary.spherical ?? google.maps.geometry?.spherical ?? null;
+      } catch (caught) {
+        console.warn(caught);
+        setStatus("No se pudo preparar Google Maps. Revisa que Maps JavaScript API este habilitada.");
+        return;
+      }
+
+      mapInstance.current = new mapClassRef.current(mapRef.current!, {
         center: initialCenter,
         zoom: 13,
         mapTypeId: "hybrid",
@@ -62,12 +92,14 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
         addPoint(latLng);
       });
 
-      setStatus("Haz click en el mapa para crear tu parcela.");
+      setStatus(purpose === "irrigation" ? "Haz click en el mapa para delimitar la zona de riego." : "Haz click en el mapa para crear tu parcela.");
     };
 
     if (areMapsLoaded()) {
-      initializeMap();
-      return;
+      void initializeMap();
+      return () => {
+        cancelled = true;
+      };
     }
 
     const script = document.querySelector<HTMLScriptElement>('script[data-google-maps]')
@@ -85,6 +117,7 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
     script.addEventListener("error", handleError);
 
     return () => {
+      cancelled = true;
       script.removeEventListener("load", handleLoad);
       script.removeEventListener("error", handleError);
     };
@@ -92,9 +125,10 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
 
   function addPoint(latLng: LatLng) {
     if (!mapInstance.current) return;
-    const google = window.google;
-    const marker = new google.maps.Marker({ position: latLng, map: mapInstance.current });
-    markersRef.current.push(marker);
+    if (markerClassRef.current) {
+      const marker = new markerClassRef.current({ position: latLng, map: mapInstance.current });
+      markersRef.current.push(marker);
+    }
     setPoints((current) => {
       const next = [...current, latLng];
       drawPolygon(next);
@@ -109,19 +143,23 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
       polygonRef.current = null;
     }
 
-    if (latLngs.length < 2) {
+    if (latLngs.length < 3) {
       onPolygonChange(null);
       return;
     }
 
-    const google = window.google;
-    polygonRef.current = new google.maps.Polygon({
+    if (!polygonClassRef.current || !sphericalRef.current) {
+      setStatus("Google Maps todavia esta preparando las herramientas del mapa.");
+      return;
+    }
+
+    polygonRef.current = new polygonClassRef.current({
       paths: latLngs,
-      strokeColor: "#1f7a4d",
+      strokeColor: purpose === "irrigation" ? "#2563eb" : "#1f7a4d",
       strokeOpacity: 0.9,
       strokeWeight: 3,
-      fillColor: "#1f7a4d",
-      fillOpacity: 0.18,
+      fillColor: purpose === "irrigation" ? "#2563eb" : "#1f7a4d",
+      fillOpacity: purpose === "irrigation" ? 0.2 : 0.18,
       editable: false,
       map: mapInstance.current,
     });
@@ -133,7 +171,7 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
     }
 
     const center = calculateCentroid(latLngs);
-    const area = google.maps.geometry.spherical.computeArea(path);
+    const area = sphericalRef.current.computeArea(path);
     setAreaMeters(area);
 
     onPolygonChange({
@@ -165,7 +203,7 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
     }
     setPoints([]);
     onPolygonChange(null);
-    setStatus("Mapa limpio. Haz click para crear una nueva parcela.");
+    setStatus(purpose === "irrigation" ? "Mapa limpio. Haz click para delimitar una nueva zona de riego." : "Mapa limpio. Haz click para crear una nueva parcela.");
   }
 
   return (
@@ -182,11 +220,11 @@ export function ParcelMap({ apiKey, initialCenter = { lat: -34.6037, lng: -58.38
             </button>
           </div>
         </div>
-        <div ref={mapRef} className="mapCanvas" aria-label="Mapa de Google para delimitar parcela" />
+        <div ref={mapRef} className="mapCanvas" aria-label={purpose === "irrigation" ? "Mapa de Google para delimitar zona de riego" : "Mapa de Google para delimitar parcela"} />
         <div className="mapStatus">{status}</div>
       </div>
       <aside className="plotSummary">
-        <h3>Resumen de parcela</h3>
+        <h3>{purpose === "irrigation" ? "Resumen de zona de riego" : "Resumen de parcela"}</h3>
         <p>Vértices: {points.length}</p>
         <p>{points.length >= 3 ? `Área aproximada: ${Math.round(areaMeters ?? 0)} m²` : "Necesitas al menos 3 puntos."}</p>
         <p>Centro aproximado: {points.length ? `${points[0].lat.toFixed(5)}, ${points[0].lng.toFixed(5)}` : "-"}</p>

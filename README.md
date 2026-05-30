@@ -22,6 +22,10 @@ Frontend:
 - TypeScript
 - lucide-react
 
+Documentacion especifica del frontend:
+
+- [frontend/README.md](c:/Users/jhonv/OneDrive/Documentos/sistema/frontend/README.md)
+
 ## Levantar con Docker
 
 ```bash

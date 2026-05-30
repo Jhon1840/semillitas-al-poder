@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CloudSnow, MapPin, Save, Trash2 } from "lucide-react";
+import { CloudSnow, Droplets, MapPin, Save } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
 import { ParcelMap } from "@/components/ParcelMap";
 import { createPlot, fetchProducers, fetchWeatherForLocation } from "@/lib/api";
 
@@ -20,6 +21,12 @@ type WeatherInfo = {
   wind_speed_ms: number | null;
 };
 
+type ZoneMeta = {
+  geojson: any;
+  center: { lat: number; lng: number };
+  area_m2: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
@@ -27,7 +34,8 @@ export default function DashboardPage() {
   const [producerId, setProducerId] = useState("");
   const [plotName, setPlotName] = useState("");
   const [plotCode, setPlotCode] = useState("");
-  const [polygonMeta, setPolygonMeta] = useState<{ geojson: any; center: { lat: number; lng: number }; area_m2: number } | null>(null);
+  const [polygonMeta, setPolygonMeta] = useState<ZoneMeta | null>(null);
+  const [irrigationZone, setIrrigationZone] = useState<ZoneMeta | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -57,12 +65,17 @@ export default function DashboardPage() {
   }, [token]);
 
   const canSave = useMemo(
-    () => Boolean(token && producerId && plotName.trim().length > 0 && polygonMeta?.geojson && polygonMeta.area_m2 > 0),
-    [token, producerId, plotName, polygonMeta]
+    () => Boolean(token && producerId && plotName.trim().length > 0 && irrigationZone?.geojson && irrigationZone.area_m2 > 0),
+    [token, producerId, plotName, irrigationZone]
+  );
+
+  const canSelectIrrigationZone = useMemo(
+    () => Boolean(polygonMeta?.geojson && polygonMeta.area_m2 > 0),
+    [polygonMeta]
   );
 
   async function handleSavePlot() {
-    if (!canSave || !polygonMeta || !token) return;
+    if (!canSave || !irrigationZone || !token) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -73,14 +86,16 @@ export default function DashboardPage() {
           producer_id: producerId,
           name: plotName,
           code: plotCode || undefined,
-          polygon_geojson: polygonMeta.geojson,
-          centroid_latitude: polygonMeta.center.lat,
-          centroid_longitude: polygonMeta.center.lng,
-          area_m2: polygonMeta.area_m2,
+          polygon_geojson: irrigationZone.geojson,
+          centroid_latitude: irrigationZone.center.lat,
+          centroid_longitude: irrigationZone.center.lng,
+          area_m2: irrigationZone.area_m2,
+          irrigation_method: "zona_delimitada",
+          water_source_type: "por_definir",
         },
         token
       );
-      setMessage(`Parcela creada: ${plot.name}`);
+      setMessage(`Zona de riego guardada como parcela: ${plot.name}`);
       setWeather(null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo crear la parcela.");
@@ -89,8 +104,9 @@ export default function DashboardPage() {
     }
   }
 
-  async function handlePolygonChange(payload: { geojson: any; center: { lat: number; lng: number }; area_m2: number } | null) {
+  async function handlePolygonChange(payload: ZoneMeta | null) {
     setPolygonMeta(payload);
+    setIrrigationZone(null);
     if (!payload || !token) return;
     setWeather(null);
     try {
@@ -107,37 +123,34 @@ export default function DashboardPage() {
     }
   }
 
-  return (
-    <main className="dashboardPage">
-      <div className="dashboardHeader">
-        <button className="linkButton" type="button" onClick={() => router.push("/")}> 
-          <ArrowLeft size={18} /> Volver
-        </button>
-        <div>
-          <p className="eyebrow">Dashboard de parcelas</p>
-          <h1>Delimita tu parcela en el mapa</h1>
-        </div>
-      </div>
+  function handleSelectIrrigationZone() {
+    if (!polygonMeta) return;
+    setIrrigationZone(polygonMeta);
+    setMessage("Zona seleccionada para riego. Ahora puedes guardarla como parcela.");
+    setError(null);
+  }
 
+  return (
+    <AppShell title="Selecciona la parcela para riego" eyebrow="Dashboard de riego">
       <div className="dashboardGrid">
         <section className="dashboardPanel">
           <div className="panelHeader">
             <MapPin size={24} />
             <div>
-              <h2>Mapa de Google</h2>
-              <p>Marca los puntos para crear el perímetro de tu parcela.</p>
+              <h2>Zona de riego en el mapa</h2>
+              <p>Marca al menos 3 puntos para delimitar el poligono que se usara como parcela seleccionada para riego.</p>
             </div>
           </div>
 
-          <ParcelMap apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""} onPolygonChange={handlePolygonChange} />
+          <ParcelMap apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""} purpose="irrigation" onPolygonChange={handlePolygonChange} />
         </section>
 
         <section className="dashboardPanel sidebarPanel">
           <div className="panelHeader">
-            <CloudSnow size={24} />
+            <Droplets size={24} />
             <div>
-              <h2>Datos de parcela</h2>
-              <p>Completa nombre y productor para guardar en el backend.</p>
+              <h2>Parcela seleccionada para riego</h2>
+              <p>Primero delimita la zona, luego confirmala como zona activa de riego.</p>
             </div>
           </div>
 
@@ -167,13 +180,15 @@ export default function DashboardPage() {
           </label>
 
           <div className="infoCard">
-            <p><strong>Vértices:</strong> {polygonMeta ? polygonMeta.geojson.coordinates[0].length - 1 : 0}</p>
-            <p><strong>Área aprox:</strong> {polygonMeta ? `${Math.round(polygonMeta.area_m2)} m²` : "-"}</p>
+            <p><strong>Estado:</strong> {irrigationZone ? "Zona seleccionada para riego" : polygonMeta ? "Zona delimitada, pendiente de seleccionar" : "Sin zona delimitada"}</p>
+            <p><strong>Vertices:</strong> {polygonMeta ? polygonMeta.geojson.coordinates[0].length - 1 : 0}</p>
+            <p><strong>Area aprox:</strong> {polygonMeta ? `${Math.round(polygonMeta.area_m2)} m2` : "-"}</p>
             <p><strong>Centro:</strong> {polygonMeta ? `${polygonMeta.center.lat.toFixed(5)}, ${polygonMeta.center.lng.toFixed(5)}` : "-"}</p>
           </div>
 
           {weather ? (
             <div className="weatherCard">
+              <CloudSnow size={20} />
               <h3>Clima estimado</h3>
               <p><strong>Fecha:</strong> {weather.forecast_date}</p>
               <p><strong>Máx:</strong> {weather.tmax_c ?? "-"} °C</p>
@@ -186,12 +201,12 @@ export default function DashboardPage() {
           {message ? <div className="toast">{message}</div> : null}
           {error ? <div className="toast error">{error}</div> : null}
 
-          <button type="button" className="primaryButton" onClick={handleSavePlot} disabled={!canSave || busy}>
-            <Save size={18} /> Guardar parcela
+          <button type="button" className="secondaryButton irrigationSelectButton" onClick={handleSelectIrrigationZone} disabled={!canSelectIrrigationZone}>
+            <Droplets size={18} /> Seleccionar zona para riego
           </button>
 
-          <button type="button" className="secondaryButton" onClick={() => router.push("/")}>
-            <Trash2 size={18} /> Cancelar
+          <button type="button" className="primaryButton" onClick={handleSavePlot} disabled={!canSave || busy}>
+            <Save size={18} /> Guardar parcela de riego
           </button>
 
           <div className="apiNote">
@@ -199,6 +214,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
-    </main>
+    </AppShell>
   );
 }

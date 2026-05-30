@@ -26,4 +26,4 @@ router.include_router(weather.router, prefix="/weather", tags=["weather"])
 router.include_router(irrigation.router, prefix="/irrigation", tags=["irrigation"])
 router.include_router(energy.router, prefix="/energy", tags=["energy"])
 router.include_router(agent.router, prefix="/agent", tags=["agent"])
-
+ 

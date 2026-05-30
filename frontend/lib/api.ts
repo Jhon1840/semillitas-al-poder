@@ -27,6 +27,8 @@ export type PlotCreateRequest = {
   centroid_latitude?: number;
   centroid_longitude?: number;
   polygon_geojson?: any;
+  irrigation_method?: string;
+  water_source_type?: string;
 };
 
 export type WeatherSnapshotResponse = {
