@@ -1,16 +1,26 @@
-# NEXO Backend
+# NEXO
 
-Backend inicial para NEXO con FastAPI, PostgreSQL/PostGIS, Alembic, Redis y Celery.
+Monorepo inicial para NEXO con backend FastAPI y frontend Next.js.
+
+El primer flujo visible es simple: landing de presentacion, login y subida de imagenes de semillas para enviarlas al servicio externo configurado en el backend.
 
 ## Stack
+
+Backend:
 
 - FastAPI + Uvicorn
 - PostgreSQL 16 + PostGIS
 - SQLAlchemy 2
 - Alembic
 - Redis + Celery
-- Pydantic
 - httpx para APIs externas
+
+Frontend:
+
+- Next.js
+- React
+- TypeScript
+- lucide-react
 
 ## Levantar con Docker
 
@@ -24,11 +34,55 @@ En otra terminal, ejecutar migraciones:
 docker compose exec api alembic upgrade head
 ```
 
-La API queda disponible en:
+URLs:
 
 ```txt
-http://localhost:8000
-http://localhost:8000/docs
+Frontend: http://localhost:3000
+Backend:  http://localhost:8000
+Swagger:  http://localhost:8000/docs
+```
+
+Redis queda disponible solo dentro de Docker como `redis:6379`; no publica el puerto `6379` en Windows para evitar conflictos.
+
+## Servicio externo de semillas
+
+Configura en `.env`:
+
+```txt
+SEEDDSS_API_URL=https://url-del-servicio-externo/analyze
+SEEDDSS_API_KEY=token-opcional
+SEEDDSS_IMAGES_FIELD=images
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
+
+El frontend manda las imagenes a:
+
+```txt
+POST /api/v1/seed-samples/external-analysis
+```
+
+Ese endpoint recibe `multipart/form-data`:
+
+```txt
+files: una o varias imagenes
+sample_code: opcional
+seed_lot_code: opcional
+```
+
+Si `SEEDDSS_API_URL` esta vacio, el backend responde en modo informativo indicando que falta configurar el servicio externo.
+
+## Login
+
+El formulario usa:
+
+```txt
+POST /api/v1/auth/login
+```
+
+Para crear un usuario de prueba puedes usar Swagger:
+
+```txt
+POST /api/v1/auth/register
 ```
 
 ## Rutas principales
@@ -40,70 +94,21 @@ POST /api/v1/auth/register
 POST /api/v1/auth/login
 GET  /api/v1/auth/me
 
-GET  /api/v1/users
-POST /api/v1/users
-
-GET  /api/v1/producers
-POST /api/v1/producers
-
-GET  /api/v1/plots
-POST /api/v1/plots
-
-GET  /api/v1/campaigns
-POST /api/v1/campaigns
+POST /api/v1/seed-samples/external-analysis
 
 GET  /api/v1/seed-samples
 POST /api/v1/seed-samples
 POST /api/v1/seed-samples/images
 POST /api/v1/seed-samples/analysis-results
-
-GET  /api/v1/weather/snapshots
-POST /api/v1/weather/snapshots
-POST /api/v1/weather/fetch/open-meteo
-
-POST /api/v1/irrigation/calculate
-
-GET  /api/v1/energy/pump-systems
-POST /api/v1/energy/pump-systems
-POST /api/v1/energy/calculate
-
-POST /api/v1/agent/campaigns/{campaign_id}/context
-GET  /api/v1/agent/contexts/{context_id}
 ```
-
-## Flujo sugerido para probar
-
-1. Crear usuario con `POST /auth/register`.
-2. Crear productor.
-3. Crear parcela.
-4. Crear campana agricola.
-5. Crear muestra de semilla.
-6. Registrar imagen con URL.
-7. Registrar resultado de analisis de semilla.
-8. Crear o consultar clima.
-9. Ejecutar calculo de riego.
-10. Crear sistema de bombeo y calcular energia.
-11. Generar contexto para agente.
-
-## Migracion inicial
-
-La migracion `202605300001_initial_schema.py` crea:
-
-- 23 tablas del MVP.
-- Extension PostGIS.
-- Indices principales.
-- Roles base.
-- Coeficientes Kc iniciales para soya.
-- Factores de calidad de semilla.
-- Vistas `vw_campaign_current_status`, `vw_seed_analysis_summary`, `vw_irrigation_explanation` y `vw_pumping_summary`.
 
 ## Comandos utiles
 
 ```bash
 docker compose exec api alembic upgrade head
-docker compose exec api alembic downgrade base
 docker compose exec api pytest
 docker compose logs -f api
-docker compose logs -f worker
+docker compose logs -f frontend
+docker compose exec frontend npm run typecheck
 ```
 

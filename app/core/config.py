@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     seeddss_api_url: str | None = None
     seeddss_api_key: str | None = None
+    seeddss_images_field: str = "images"
     open_meteo_api_url: str = "https://api.open-meteo.com/v1/forecast"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
