@@ -1,0 +1,9 @@
+.env.local
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+uploads/
+postgres_data/
+
