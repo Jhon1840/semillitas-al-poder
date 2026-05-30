@@ -6,7 +6,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const scriptProps = {
     id: "google-maps-script",
     "data-google-maps": "true",
-    src: `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`,
+    src: `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async`,
     async: true,
     defer: true,
     loading: "async",

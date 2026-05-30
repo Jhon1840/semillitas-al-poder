@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class Token(BaseModel):
@@ -14,6 +14,13 @@ class UserCreate(BaseModel):
     password: str
     phone: str | None = None
 
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("La contrasena no puede superar 72 bytes por una limitacion de bcrypt.")
+        return value
+
 
 class UserRead(BaseModel):
     id: UUID
@@ -23,4 +30,3 @@ class UserRead(BaseModel):
     status: str
 
     model_config = {"from_attributes": True}
-
