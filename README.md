@@ -53,6 +53,7 @@ SEEDDSS_API_URL=https://url-del-servicio-externo/analyze
 SEEDDSS_API_KEY=token-opcional
 SEEDDSS_IMAGES_FIELD=images
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-google-maps-api-key
 ```
 
 El frontend manda las imagenes a:

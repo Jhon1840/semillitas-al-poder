@@ -2,8 +2,9 @@
 
 import { ArrowRight, CheckCircle2, ImageUp, Leaf, LockKeyhole, ScanSearch, ShieldCheck, Sprout, UploadCloud } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { API_BASE_URL, login, uploadSeedImages } from "@/lib/api";
+import { API_BASE_URL, login, registerUser, uploadSeedImages } from "@/lib/api";
 
 type Session = {
   email: string;
@@ -11,9 +12,14 @@ type Session = {
 };
 
 export function LandingApp() {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
   const [sampleCode, setSampleCode] = useState("");
   const [seedLotCode, setSeedLotCode] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -41,9 +47,36 @@ export function LandingApp() {
     try {
       const result = await login(loginEmail, loginPassword);
       setSession({ email: loginEmail, token: result.access_token });
-      setMessage("Sesion iniciada. Ya puedes enviar imagenes al analisis.");
+      window.localStorage.setItem("nexo-token", result.access_token);
+      setMessage("Sesion iniciada. Redirigiendo al dashboard.");
+      router.push("/dashboard");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo iniciar sesion.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRegister(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      await registerUser({
+        name: registerName,
+        email: registerEmail,
+        password: registerPassword,
+        phone: registerPhone || undefined,
+      });
+      setMessage("Usuario registrado. Ahora inicia sesión.");
+      setRegisterName("");
+      setRegisterEmail("");
+      setRegisterPassword("");
+      setRegisterPhone("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "No se pudo registrar el usuario.");
     } finally {
       setBusy(false);
     }
@@ -88,6 +121,7 @@ export function LandingApp() {
         <div className="navLinks">
           <a href="#producto">Producto</a>
           <a href="#login">Login</a>
+          <a href="#register">Registrar</a>
           <a href="#upload">Subir imagenes</a>
         </div>
       </nav>
@@ -164,6 +198,37 @@ export function LandingApp() {
               Sesion activa: {session.email}
             </div>
           ) : null}
+        </section>
+
+        <section className="registerPanel" id="register">
+          <div className="panelHeader">
+            <Leaf size={22} />
+            <div>
+              <h2>Registrar usuario</h2>
+              <p>Crea tu usuario para poder iniciar sesión y entrar al dashboard.</p>
+            </div>
+          </div>
+          <form className="form" onSubmit={handleRegister}>
+            <label>
+              Nombre completo
+              <input value={registerName} onChange={(event) => setRegisterName(event.target.value)} placeholder="Nombre completo" required />
+            </label>
+            <label>
+              Email
+              <input type="email" value={registerEmail} onChange={(event) => setRegisterEmail(event.target.value)} placeholder="usuario@nexo.app" required />
+            </label>
+            <label>
+              Password
+              <input type="password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="********" required />
+            </label>
+            <label>
+              Teléfono
+              <input value={registerPhone} onChange={(event) => setRegisterPhone(event.target.value)} placeholder="+549..." />
+            </label>
+            <button type="submit" disabled={busy}>
+              Crear cuenta
+            </button>
+          </form>
         </section>
 
         <section className="uploadPanel" id="upload">
