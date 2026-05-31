@@ -23,7 +23,11 @@ class Settings(BaseSettings):
     seeddss_api_url: str | None = None
     seeddss_api_key: str | None = None
     seeddss_images_field: str = "images"
+    seeddss_login_path: str = "/api/login"
     open_meteo_api_url: str = "https://api.open-meteo.com/v1/forecast"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

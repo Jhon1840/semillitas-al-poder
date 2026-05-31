@@ -53,10 +53,12 @@ Redis queda disponible solo dentro de Docker como `redis:6379`; no publica el pu
 Configura en `.env`:
 
 ```txt
-SEEDDSS_API_URL=https://url-del-servicio-externo/analyze
+SEEDDSS_API_URL=http://10.10.35.127:8000/
 SEEDDSS_API_KEY=token-opcional
-SEEDDSS_IMAGES_FIELD=images
+SEEDDSS_IMAGES_FIELD=files
+SEEDDSS_LOGIN_PATH=/api/login
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_SEEDDSS_API_URL=http://10.10.35.127:8000
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-google-maps-api-key
 ```
 
@@ -70,25 +72,25 @@ Ese endpoint recibe `multipart/form-data`:
 
 ```txt
 files: una o varias imagenes
-sample_code: opcional
-seed_lot_code: opcional
+sample_id: opcional
+generated_by: opcional
+observations: opcional
+session_id: opcional, solo si se quiere guardar reporte dentro del wizard SeedDSS
 ```
 
-Si `SEEDDSS_API_URL` esta vacio, el backend responde en modo informativo indicando que falta configurar el servicio externo.
+El backend NEXO reenvia esas imagenes a `POST {SEEDDSS_API_URL}/api/analyze_group`. Si se envia `session_id`, tambien intenta guardar el reporte en `POST {SEEDDSS_API_URL}/api/save_report`, porque esa API exige una sesion del wizard.
 
 ## Login
 
 El formulario usa:
 
 ```txt
-POST /api/v1/auth/login
+POST /api/v1/auth/seeddss-login
 ```
 
-Para crear un usuario de prueba puedes usar Swagger:
+Este endpoint de NEXO hace proxy contra la API de SeedDSS en `POST {SEEDDSS_API_URL}{SEEDDSS_LOGIN_PATH}` con JSON. Por defecto usa `POST http://10.10.35.127:8000/api/login`. No usa el login local de NEXO.
 
-```txt
-POST /api/v1/auth/register
-```
+Importante: en el codigo Flask de SeedDSS, la ruta API es `/api/login` y el servidor se levanta por defecto en el puerto `8000`.
 
 ## Rutas principales
 
@@ -97,6 +99,7 @@ GET  /api/v1/health
 
 POST /api/v1/auth/register
 POST /api/v1/auth/login
+POST /api/v1/auth/seeddss-login
 GET  /api/v1/auth/me
 
 POST /api/v1/seed-samples/external-analysis

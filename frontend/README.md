@@ -54,7 +54,7 @@ La pantalla esta en [login/page.tsx](c:/Users/jhonv/OneDrive/Documentos/sistema/
 
 Al iniciar sesion:
 
-- llama a `POST /api/v1/auth/login`
+- llama a `POST /api/v1/auth/seeddss-login`
 - guarda `nexo-token` en `localStorage`
 - guarda `nexo-email` en `localStorage`
 - redirige a `/dashboard`
@@ -99,8 +99,9 @@ La pantalla esta en [upload/page.tsx](c:/Users/jhonv/OneDrive/Documentos/sistema
 Permite:
 
 - seleccionar una o varias imagenes
-- enviar `sample_code` opcional
-- enviar `seed_lot_code` opcional
+- enviar `sample_id` opcional
+- enviar `generated_by` opcional
+- enviar `observations` opcional
 - mandar `multipart/form-data` a `POST /api/v1/seed-samples/external-analysis`
 
 ## Sidebar privado
@@ -151,7 +152,7 @@ Funciones actuales:
 
 ### Endpoints usados
 
-- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/seeddss-login`
 - `POST /api/v1/auth/register`
 - `GET /api/v1/producers`
 - `POST /api/v1/plots`

@@ -22,7 +22,11 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       window.localStorage.setItem("nexo-token", result.access_token);
-      window.localStorage.setItem("nexo-email", email);
+      window.localStorage.setItem("nexo-email", result.user?.name || result.user?.email || email);
+      window.localStorage.setItem("nexo-auth-provider", result.provider || "seeddss");
+      if (result.user) {
+        window.localStorage.setItem("nexo-user", JSON.stringify(result.user));
+      }
       router.push("/dashboard");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo iniciar sesion.");
@@ -42,7 +46,7 @@ export default function LoginPage() {
           <div>
             <p className="eyebrow">Acceso</p>
             <h1>Ingresa a NEXO</h1>
-            <p>Continua al dashboard para delimitar parcelas y subir imagenes de semillas.</p>
+            <p>Usa tus credenciales de SeedDSS para entrar al dashboard de NEXO.</p>
           </div>
         </div>
 

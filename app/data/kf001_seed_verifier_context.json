@@ -1,0 +1,173 @@
+{
+  "context_type": "seed_verifier_external_results",
+  "source": "SeedDSS external API via NEXO",
+  "external_api_base_url": "http://10.10.35.127:8000",
+  "producer": {
+    "cod_producer": "KF001",
+    "producer_id": "9719AF1B-11A1-484C-822C-DD7BE399DE79",
+    "name": "Karen Valeria Flores Rivas",
+    "phone": "+59165060823",
+    "address": "Urb. Cotoca calle k"
+  },
+  "seedguard_user_match": {
+    "name": "Karen Flores",
+    "email": "karenvfloresr@gmail.com",
+    "user_id": "B0D0A5A3-F6BC-4115-ACFD-CC62A496529D",
+    "role": "Administrador"
+  },
+  "related_lots": [
+    {
+      "lot_id": "951AD0E7-34B9-46D2-813B-82A005A17B75",
+      "producer": "Karen Valeria Flores Rivas",
+      "species": "Soja",
+      "variety": "INTACTA",
+      "category": "A",
+      "reception": "2026-01-08",
+      "created_by": "Valeria Flores"
+    },
+    {
+      "lot_id": "CAC1B371-34CC-453C-BE50-1E9B8E7C1F0C",
+      "producer": "Karen Valeria Flores Rivas",
+      "species": "Soja",
+      "variety": "INTACTA",
+      "category": "A",
+      "reception": "2025-12-26",
+      "created_by": "Valeria Flores"
+    },
+    {
+      "lot_id": "75E78653-BD58-4B09-B44E-6FE39B5A18E6",
+      "producer": "Karen Valeria Flores Rivas",
+      "species": "Soja",
+      "variety": "MG/PR",
+      "category": "A",
+      "reception": "2025-12-18",
+      "created_by": "Valeria Flores"
+    }
+  ],
+  "recent_samples": [
+    {
+      "sample_id": "F63F9D05-E2C2-493B-AB01-53C3FF14542B",
+      "lot_name": " - MUNASQA",
+      "sample_date": "2026-05-31",
+      "analyst": "Karen Flores",
+      "observations": ""
+    },
+    {
+      "sample_id": "FEBF5D1E-EB61-403D-90E4-6042C381E0F3",
+      "lot_name": " - MUNASQA",
+      "sample_date": "2026-05-31",
+      "analyst": "Karen Flores",
+      "observations": ""
+    },
+    {
+      "sample_id": "CAE8602F-8350-4291-9DD7-F2A6687D20DB",
+      "lot_name": " - PATUJU",
+      "sample_date": "2026-05-30",
+      "analyst": "Karen Flores",
+      "observations": "Ninguna"
+    }
+  ],
+  "latest_seed_analysis": {
+    "analysis_id": "8080b9fb-ded9-403f-acc4-839f530c6bfb",
+    "processed_at": "2026-05-31 07:13:33",
+    "predicted_class": "Skin-damaged soybeans",
+    "probability": 0.8742152824997902,
+    "confidence_percent": 87.42,
+    "images_evaluated": 8,
+    "image_files": [
+      "94.bmp",
+      "95.bmp",
+      "96.bmp",
+      "97.bmp",
+      "978.bmp",
+      "979.bmp",
+      "98.bmp",
+      "99.bmp"
+    ],
+    "feature_summary": {
+      "visible_mechanical_damage": "No visible damage reported in all 8 images",
+      "spots": "Reported as present in all evaluated images",
+      "impurities": "Present in 3 of 8 evaluated images",
+      "relative_size_range_percent": "52.5 - 78.7",
+      "circularity_range": "0.39 - 0.84",
+      "color_hue_range": "38.54 - 88.94",
+      "color_variation_range": "29.07 - 51.49"
+    },
+    "per_image_features": {
+      "94.bmp": {
+        "circularity": "0.39",
+        "mean_color_h": 79.28,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "No",
+        "relative_size": "52.5%",
+        "color_variation": "50.38 (Manchas: Si)"
+      },
+      "95.bmp": {
+        "circularity": "0.42",
+        "mean_color_h": 51.97,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "Si",
+        "relative_size": "57.4%",
+        "color_variation": "46.79 (Manchas: Si)"
+      },
+      "96.bmp": {
+        "circularity": "0.79",
+        "mean_color_h": 62.77,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "No",
+        "relative_size": "74.1%",
+        "color_variation": "49.04 (Manchas: Si)"
+      },
+      "97.bmp": {
+        "circularity": "0.72",
+        "mean_color_h": 63.72,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "Si",
+        "relative_size": "74.6%",
+        "color_variation": "51.49 (Manchas: Si)"
+      },
+      "978.bmp": {
+        "circularity": "0.81",
+        "mean_color_h": 38.54,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "No",
+        "relative_size": "78.7%",
+        "color_variation": "29.07 (Manchas: Si)"
+      },
+      "979.bmp": {
+        "circularity": "0.70",
+        "mean_color_h": 88.94,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "Si",
+        "relative_size": "71.7%",
+        "color_variation": "47.59 (Manchas: Si)"
+      },
+      "98.bmp": {
+        "circularity": "0.73",
+        "mean_color_h": 54.17,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "No",
+        "relative_size": "68.5%",
+        "color_variation": "42.51 (Manchas: Si)"
+      },
+      "99.bmp": {
+        "circularity": "0.84",
+        "mean_color_h": 69.29,
+        "mechanical_damage": "Sin danos visibles",
+        "impurities": "No",
+        "relative_size": "77.1%",
+        "color_variation": "44.50 (Manchas: Si)"
+      }
+    },
+    "nexo_interpretation": {
+      "quality_signal": "El modelo clasifico el lote como soya con dano de piel con confianza alta.",
+      "operational_note": "Aunque no se reportan danos mecanicos visibles, las manchas aparecen en todas las imagenes y hay impurezas en 3 de 8 imagenes.",
+      "recommended_response": [
+        "Revisar limpieza del lote antes de uso comercial o siembra.",
+        "Separar submuestras con manchas para inspeccion visual.",
+        "No tratar el resultado como descarte automatico; usarlo como alerta de calidad."
+      ],
+      "irrigation_note": "Para el calculo de riego NEXO, este resultado puede reducir la confianza de vigor inicial y ajustar Kc inicial de forma conservadora hasta confirmar germinacion."
+    }
+  }
+}

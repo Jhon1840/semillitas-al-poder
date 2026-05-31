@@ -3,20 +3,22 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ImageUp, LayoutDashboard, LogOut, Sprout, UserCircle2 } from "lucide-react";
+import { Bot, ChevronLeft, ChevronRight, ImageUp, LayoutDashboard, LogOut, Sprout, UserCircle2 } from "lucide-react";
 
 type AppShellProps = {
   children: ReactNode;
   title: string;
   eyebrow?: string;
+  variant?: "default" | "map";
 };
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", description: "Parcelas y mapa", icon: LayoutDashboard },
-  { href: "/upload", label: "Subir imagenes", description: "Analisis de semillas", icon: ImageUp },
+  { href: "/upload", label: "Verificar semillas", description: "Productor, lote y analisis", icon: ImageUp },
+  { href: "/assistant", label: "Asistente IA", description: "Chat con Gemini", icon: Bot },
 ];
 
-export function AppShell({ children, title, eyebrow = "Area privada" }: AppShellProps) {
+export function AppShell({ children, title, eyebrow = "Area privada", variant = "default" }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [email, setEmail] = useState("");
@@ -45,6 +47,8 @@ export function AppShell({ children, title, eyebrow = "Area privada" }: AppShell
   function logout() {
     window.localStorage.removeItem("nexo-token");
     window.localStorage.removeItem("nexo-email");
+    window.localStorage.removeItem("nexo-user");
+    window.localStorage.removeItem("nexo-auth-provider");
     router.push("/");
   }
 
@@ -107,8 +111,8 @@ export function AppShell({ children, title, eyebrow = "Area privada" }: AppShell
         </div>
       </aside>
 
-      <section className="appMain">
-        <header className="appHeader">
+      <section className={variant === "map" ? "appMain mapAppMain" : "appMain"}>
+        <header className={variant === "map" ? "appHeader mapAppHeader" : "appHeader"}>
           <div>
             <p className="eyebrow">{eyebrow}</p>
             <h1>{title}</h1>
