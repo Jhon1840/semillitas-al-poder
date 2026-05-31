@@ -6,7 +6,19 @@ import { CloudSun, Droplets, MapPin, Save, Sprout } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { ParcelMap } from "@/components/ParcelMap";
-import { Plot, Producer, WeatherSnapshotResponse, createPlot, fetchPlots, fetchProducers, fetchWeatherForLocation } from "@/lib/api";
+import {
+  ExternalSeedAnalysis,
+  ExternalSeedLot,
+  Plot,
+  Producer,
+  WeatherSnapshotResponse,
+  createPlot,
+  fetchExternalSeedAnalyses,
+  fetchExternalSeedLots,
+  fetchPlots,
+  fetchProducers,
+  fetchWeatherForLocation,
+} from "@/lib/api";
 
 type ZoneMeta = {
   geojson: any;
@@ -23,6 +35,8 @@ const cropStages: Record<CropStage, { label: string; kc: number }> = {
   media: { label: "Media temporada", kc: 1.15 },
   final: { label: "Final / maduracion", kc: 0.55 },
 };
+
+const SANTA_CRUZ_CENTER = { lat: -17.7833, lng: -63.1821 };
 
 function toNumber(value: unknown, fallback = 0) {
   const parsed = Number(value);
@@ -59,6 +73,59 @@ function calculateEt0(weather: WeatherSnapshotResponse | null) {
   const temperatureRange = Math.max(0.1, tmax - tmin);
   const extraterrestrialRadiationEstimate = 16;
   return Math.max(0, 0.0023 * (tmean + 17.8) * Math.sqrt(temperatureRange) * extraterrestrialRadiationEstimate);
+}
+
+function firstAnalysisFeatureGroup(analysis: ExternalSeedAnalysis | null): Record<string, unknown>[] {
+  if (!analysis?.features) return [];
+  return Object.values(analysis.features).filter((value): value is Record<string, unknown> => typeof value === "object" && value !== null);
+}
+
+function includesYes(value: unknown) {
+  return String(value ?? "").toLowerCase().includes("sí") || String(value ?? "").toLowerCase().includes("si") || String(value ?? "").toLowerCase().includes("yes");
+}
+
+function hasDamage(value: unknown) {
+  const text = String(value ?? "").toLowerCase();
+  return text.includes("rajadura") || text.includes("daño") || text.includes("dano") || text.includes("skin-damaged");
+}
+
+function parsePercent(value: unknown, fallback = 0) {
+  const match = String(value ?? "").match(/[\d.]+/);
+  return match ? toNumber(match[0], fallback) : fallback;
+}
+
+function formatWeatherValue(value: unknown, suffix: string, digits = 1) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? `${parsed.toFixed(digits)} ${suffix}` : `- ${suffix}`;
+}
+
+function buildSeedMetricsFromAnalysis(analysis: ExternalSeedAnalysis | null) {
+  const groups = firstAnalysisFeatureGroup(analysis);
+  const total = groups.length || 1;
+  const impurities = groups.filter((group) => includesYes(group["Impurezas"])).length;
+  const damages = groups.filter((group) => hasDamage(group["Daños mecánicos"] ?? group["Danos mecanicos"])).length;
+  const spots = groups.filter((group) => includesYes(group["Variación de color"] ?? group["Variacion de color"])).length;
+  const avgRelativeSize = groups.reduce((sum, group) => sum + parsePercent(group["Tamaño relativo"] ?? group["Tamano relativo"], 70), 0) / total;
+  const confidence = toNumber(analysis?.probability, 0);
+  const classDamagePenalty = hasDamage(analysis?.predicted_class) ? 8 : 0;
+  const purity = Math.max(70, Math.min(99, 99 - impurities * 2.2 - damages * 3.5 - classDamagePenalty));
+  const vigor = Math.max(60, Math.min(98, confidence * 100 - damages * 4 - spots * 1.2 + Math.max(0, avgRelativeSize - 70) * 0.15));
+  const quality = (purity + vigor) / 2;
+
+  return {
+    purity,
+    vigor,
+    quality,
+    impurities,
+    damages,
+    spots,
+    totalImages: groups.length,
+    avgRelativeSize,
+    confidence,
+    summary: analysis
+      ? `${analysis.predicted_class ?? "Sin clase"} · ${(confidence * 100).toFixed(1)}% confianza · ${groups.length} imagenes`
+      : "Sin analisis seleccionado",
+  };
 }
 
 function buildIrrigationCalculation(params: {
@@ -107,6 +174,8 @@ export default function DashboardPage() {
   const [token, setToken] = useState<string | null>(null);
   const [producers, setProducers] = useState<Producer[]>([]);
   const [plots, setPlots] = useState<Plot[]>([]);
+  const [seedLots, setSeedLots] = useState<ExternalSeedLot[]>([]);
+  const [seedAnalyses, setSeedAnalyses] = useState<ExternalSeedAnalysis[]>([]);
   const [producerId, setProducerId] = useState("");
   const [plotMode, setPlotMode] = useState<PlotMode>("existing");
   const [selectedPlotId, setSelectedPlotId] = useState("");
@@ -118,6 +187,8 @@ export default function DashboardPage() {
   const [cropStage, setCropStage] = useState<CropStage>("inicial");
   const [seedPurity, setSeedPurity] = useState(98);
   const [seedVigor, setSeedVigor] = useState(94);
+  const [selectedSeedLotId, setSelectedSeedLotId] = useState("");
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState("");
   const [weeklyPumpHours, setWeeklyPumpHours] = useState(12);
   const [pumpFlowLps, setPumpFlowLps] = useState(50);
   const [message, setMessage] = useState<string | null>(null);
@@ -135,14 +206,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!token) return;
-    Promise.all([fetchProducers(token), fetchPlots(token)])
-      .then(([producerItems, plotItems]) => {
+    Promise.all([fetchProducers(token), fetchPlots(token), fetchExternalSeedLots(token), fetchExternalSeedAnalyses(token)])
+      .then(([producerItems, plotItems, lotItems, analysisItems]) => {
         setProducers(producerItems);
         setPlots(plotItems);
+        setSeedLots(lotItems);
+        setSeedAnalyses(analysisItems);
         const firstProducer = producerItems[0]?.id ?? "";
         setProducerId((current) => current || firstProducer);
         const firstPlot = plotItems.find((plot) => plot.producer_id === (producerId || firstProducer)) ?? plotItems[0];
         if (firstPlot) setSelectedPlotId((current) => current || firstPlot.id);
+        if (lotItems[0]) setSelectedSeedLotId((current) => current || lotItems[0].lot_id);
+        if (analysisItems[0]) setSelectedAnalysisId((current) => current || analysisItems[0].analysis_id);
       })
       .catch((caught) => {
         setError(caught instanceof Error ? caught.message : "No se pudieron cargar los datos iniciales.");
@@ -158,6 +233,15 @@ export default function DashboardPage() {
     () => producerPlots.find((plot) => plot.id === selectedPlotId) ?? null,
     [producerPlots, selectedPlotId]
   );
+  const selectedSeedLot = useMemo(
+    () => seedLots.find((lot) => lot.lot_id === selectedSeedLotId) ?? null,
+    [seedLots, selectedSeedLotId]
+  );
+  const selectedSeedAnalysis = useMemo(
+    () => seedAnalyses.find((analysis) => analysis.analysis_id === selectedAnalysisId) ?? null,
+    [seedAnalyses, selectedAnalysisId]
+  );
+  const seedMetrics = useMemo(() => buildSeedMetricsFromAnalysis(selectedSeedAnalysis), [selectedSeedAnalysis]);
 
   const selectedZone = plotMode === "existing" && selectedPlot ? plotToZone(selectedPlot) : irrigationZone;
   const canSelectIrrigationZone = Boolean(polygonMeta?.geojson && polygonMeta.area_m2 > 0);
@@ -166,8 +250,8 @@ export default function DashboardPage() {
     zone: selectedZone,
     weather,
     cropStage,
-    seedPurity,
-    seedVigor,
+    seedPurity: selectedSeedAnalysis ? seedMetrics.purity : seedPurity,
+    seedVigor: selectedSeedAnalysis ? seedMetrics.vigor : seedVigor,
     weeklyPumpHours,
     pumpFlowLps,
   });
@@ -244,7 +328,7 @@ export default function DashboardPage() {
             apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
             purpose="irrigation"
             allowDrawing={plotMode === "new"}
-            initialCenter={selectedZone?.center ?? { lat: -34.6037, lng: -58.3816 }}
+            initialCenter={SANTA_CRUZ_CENTER}
             selectedAreaM2={selectedZone?.area_m2 ?? polygonMeta?.area_m2 ?? null}
             selectedLabel={plotMode === "existing" ? selectedPlot?.name : plotName || "Nueva parcela"}
             onPolygonChange={handlePolygonChange}
@@ -335,7 +419,7 @@ export default function DashboardPage() {
               <div className="weatherMiniGrid">
                 <article>
                   <CloudSun size={18} />
-                  <strong>{weather?.tmax_c ?? "-"} C</strong>
+                  <strong>{formatWeatherValue(weather?.tmax_c, "C")}</strong>
                   <span>Temp</span>
                 </article>
                 <article>
@@ -345,7 +429,7 @@ export default function DashboardPage() {
                 </article>
                 <article>
                   <Sprout size={18} />
-                  <strong>{weather?.wind_speed_ms ?? "-"} m/s</strong>
+                  <strong>{formatWeatherValue(weather?.wind_speed_ms, "m/s")}</strong>
                   <span>Viento</span>
                 </article>
               </div>
@@ -363,12 +447,62 @@ export default function DashboardPage() {
                   </select>
                 </label>
                 <label>
+                  Lote SeedDSS
+                  <select value={selectedSeedLotId} onChange={(event) => setSelectedSeedLotId(event.target.value)}>
+                    {seedLots.length ? (
+                      seedLots.map((lot) => (
+                        <option key={lot.lot_id} value={lot.lot_id}>
+                          {(lot.producer || lot.created_by || "Productor")} · {lot.species || "Semilla"} {lot.variety || ""} {lot.category ? `(${lot.category})` : ""}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Sin lotes SeedDSS</option>
+                    )}
+                  </select>
+                </label>
+                <label>
+                  Analisis SeedDSS
+                  <select value={selectedAnalysisId} onChange={(event) => setSelectedAnalysisId(event.target.value)}>
+                    {seedAnalyses.length ? (
+                      seedAnalyses.map((analysis) => (
+                        <option key={analysis.analysis_id} value={analysis.analysis_id}>
+                          {analysis.predicted_class || "Analisis"} · {((analysis.probability ?? 0) * 100).toFixed(1)}% · {analysis.processed_at || analysis.analysis_id.slice(0, 8)}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Sin analisis SeedDSS</option>
+                    )}
+                  </select>
+                </label>
+                <div className="selectionCard seedQualityCard">
+                  <span><Sprout size={18} /></span>
+                  <div>
+                    <strong>{selectedSeedAnalysis ? "Calidad desde SeedDSS" : "Calidad manual"}</strong>
+                    <p>{selectedSeedAnalysis ? seedMetrics.summary : "Usa pureza y vigor manuales."}</p>
+                    {selectedSeedLot ? <p>Lote: {selectedSeedLot.species} {selectedSeedLot.variety} · {selectedSeedLot.category || "sin categoria"}</p> : null}
+                  </div>
+                </div>
+                <label>
                   Pureza (%)
-                  <input type="number" min="0" max="100" value={seedPurity} onChange={(event) => setSeedPurity(toNumber(event.target.value, 0))} />
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={(selectedSeedAnalysis ? seedMetrics.purity : seedPurity).toFixed(1)}
+                    onChange={(event) => setSeedPurity(toNumber(event.target.value, 0))}
+                    disabled={Boolean(selectedSeedAnalysis)}
+                  />
                 </label>
                 <label>
                   Vigor (%)
-                  <input type="number" min="0" max="100" value={seedVigor} onChange={(event) => setSeedVigor(toNumber(event.target.value, 0))} />
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={(selectedSeedAnalysis ? seedMetrics.vigor : seedVigor).toFixed(1)}
+                    onChange={(event) => setSeedVigor(toNumber(event.target.value, 0))}
+                    disabled={Boolean(selectedSeedAnalysis)}
+                  />
                 </label>
                 <label>
                   Horas / semana
@@ -386,6 +520,7 @@ export default function DashboardPage() {
                 <h3>ETc = Kc x ET0</h3>
                 <p><strong>ET0</strong><span>{calculation.et0.toFixed(2)} mm/dia</span></p>
                 <p><strong>Kc ajustado</strong><span>{calculation.kcAdjusted.toFixed(2)}</span></p>
+                <p><strong>Factor semilla</strong><span>{calculation.seedFactor.toFixed(3)}</span></p>
                 <p><strong>ETc</strong><span>{calculation.etc.toFixed(2)} mm/dia</span></p>
                 <p><strong>Lamina neta</strong><span>{calculation.waterDeficitMm.toFixed(2)} mm/dia</span></p>
               </div>

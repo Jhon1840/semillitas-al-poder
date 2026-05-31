@@ -164,6 +164,30 @@ async def download_external_seed_report(analysis_id: str, authorization: str | N
     )
 
 
+@router.get("/external/lots")
+async def list_external_seed_lots(authorization: str | None = Header(default=None)) -> dict | list:
+    try:
+        return await get_from_external_json("/api/lots", auth_header=authorization)
+    except HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"No se pudieron cargar los lotes de SeedDSS: {exc}") from exc
+
+
+@router.get("/external/samples")
+async def list_external_seed_samples(authorization: str | None = Header(default=None)) -> dict | list:
+    try:
+        return await get_from_external_json("/api/samples", auth_header=authorization)
+    except HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"No se pudieron cargar las muestras de SeedDSS: {exc}") from exc
+
+
+@router.get("/external/analyses")
+async def list_external_seed_analyses(authorization: str | None = Header(default=None)) -> dict | list:
+    try:
+        return await get_from_external_json("/api/analyses", auth_header=authorization)
+    except HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"No se pudieron cargar los analisis de SeedDSS: {exc}") from exc
+
+
 @router.get("/{sample_id}", response_model=SeedSampleRead)
 def get_seed_sample(sample_id: UUID, db: Session = Depends(get_db)) -> SeedSample:
     return get_or_404(db, SeedSample, sample_id)

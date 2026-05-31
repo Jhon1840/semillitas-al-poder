@@ -19,8 +19,6 @@ import {
 
 import { AppShell } from "@/components/AppShell";
 import {
-  API_BASE_URL,
-  SEEDDSS_API_BASE_URL,
   fetchSeedOverlayImages,
   saveSeedWizardStep,
   searchSeedProducer,
@@ -175,7 +173,6 @@ export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const progress = (step / steps.length) * 100;
-  const activeEndpoint = `${SEEDDSS_API_BASE_URL}/api/analyze_group`;
 
   const previews = useMemo(() => images.map((image) => image.preview), [images]);
 
@@ -395,8 +392,8 @@ export default function UploadPage() {
             <p>Replica el proceso SeedDSS: productor, lote, muestra, analisis por imagenes, resultados e informe.</p>
           </div>
           <div className="wizardEndpoint">
-            <span>API externa activa</span>
-            <code>{activeEndpoint}</code>
+            <span>Flujo de verificacion</span>
+            <code>Productor, lote, muestra, analisis e informe</code>
           </div>
         </div>
 
@@ -479,7 +476,7 @@ export default function UploadPage() {
                   ))}
                 </div>
               ) : null}
-              <div className="apiNote"><ImageUp size={18} /> NEXO envia a <code>{API_BASE_URL}/seed-samples/external-analysis</code> y el backend reenvia a <code>{activeEndpoint}</code>.</div>
+              <div className="apiNote"><ImageUp size={18} /> NEXO procesa las imagenes desde el backend y devuelve los resultados al informe.</div>
               <div className="wizardActions split"><button type="button" className="secondaryButton" onClick={() => setStep(3)} disabled={busy}><ArrowLeft size={17} /> Volver</button><button type="button" onClick={runAnalysis} disabled={busy || !images.length}>{busy ? <><Loader2 className="spin" size={17} /> Analizando...</> : "Iniciar analisis IA"}</button></div>
             </div>
           ) : null}

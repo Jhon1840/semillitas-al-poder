@@ -46,7 +46,7 @@ export default function LoginPage() {
           <div>
             <p className="eyebrow">Acceso</p>
             <h1>Ingresa a NEXO</h1>
-            <p>Usa tus credenciales de SeedDSS para entrar al dashboard de NEXO.</p>
+            <p>Usa tus credenciales para entrar al dashboard de NEXO.</p>
           </div>
         </div>
 

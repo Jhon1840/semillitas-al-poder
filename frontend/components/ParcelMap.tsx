@@ -26,7 +26,7 @@ function areMapsLoaded() {
 
 export function ParcelMap({
   apiKey,
-  initialCenter = { lat: -34.6037, lng: -58.3816 },
+  initialCenter = { lat: -17.7833, lng: -63.1821 },
   onPolygonChange,
   purpose = "plot",
   allowDrawing = true,

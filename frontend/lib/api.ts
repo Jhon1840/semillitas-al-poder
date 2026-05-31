@@ -70,6 +70,29 @@ export type WeatherSnapshotResponse = {
   wind_speed_ms?: number;
 };
 
+export type ExternalSeedLot = {
+  lot_id: string;
+  producer?: string;
+  species?: string;
+  variety?: string;
+  category?: string;
+  reception?: string;
+  created_by?: string;
+};
+
+export type ExternalSeedAnalysis = {
+  analysis_id: string;
+  sample_id?: string;
+  sample_guid?: string;
+  image_id?: string;
+  predicted_class?: string;
+  probability?: number;
+  probability_vector?: number[];
+  features?: Record<string, Record<string, unknown>>;
+  processed_at?: string;
+  filename?: string;
+};
+
 export type AgentChatMessage = {
   role: "user" | "assistant" | "model";
   content: string;
@@ -294,5 +317,27 @@ export async function fetchSeedOverlayImages(analysisId: string, token?: string)
 
 export function seedReportDownloadUrl(analysisId: string): string {
   return `${API_BASE_URL}/seed-samples/wizard/download-report/${analysisId}`;
+}
+
+export async function fetchExternalSeedLots(token?: string): Promise<ExternalSeedLot[]> {
+  const response = await fetch(`${API_BASE_URL}/seed-samples/external/lots`, {
+    headers: authHeaders(token, false),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(typeof payload?.detail === "string" ? payload.detail : "No se pudieron cargar los lotes SeedDSS.");
+  }
+  return Array.isArray(payload) ? payload : [];
+}
+
+export async function fetchExternalSeedAnalyses(token?: string): Promise<ExternalSeedAnalysis[]> {
+  const response = await fetch(`${API_BASE_URL}/seed-samples/external/analyses`, {
+    headers: authHeaders(token, false),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(typeof payload?.detail === "string" ? payload.detail : "No se pudieron cargar los analisis SeedDSS.");
+  }
+  return Array.isArray(payload) ? payload : [];
 }
 

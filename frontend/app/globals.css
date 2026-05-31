@@ -2478,6 +2478,14 @@ select {
   margin: 2px 0 0;
 }
 
+.seedQualityCard {
+  grid-column: 1 / -1;
+}
+
+.seedQualityCard p + p {
+  margin-top: 4px;
+}
+
 .weatherMiniGrid {
   display: grid;
   gap: 8px;

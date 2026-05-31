@@ -100,7 +100,7 @@ export default function AssistantPage() {
           <div className="assistantContextCard">
             <div>
               <DatabaseZap size={20} />
-              <strong>Contexto conectado</strong>
+              <strong>Contexto disponible</strong>
             </div>
             {contextError ? <p className="inlineError">{contextError}</p> : null}
             <div className="assistantStatsGrid">

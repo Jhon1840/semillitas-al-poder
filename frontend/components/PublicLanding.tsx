@@ -68,7 +68,7 @@ export function PublicLanding() {
           </p>
         </div>
         <div className="featureGrid">
-          <Feature icon={<Camera />} title="Imagenes de semillas" text="Sube fotos y envialas al servicio externo de analisis sin exponer claves en el navegador." />
+          <Feature icon={<Camera />} title="Imagenes de semillas" text="Sube fotos para obtener indicadores de calidad sin exponer claves en el navegador." />
           <Feature icon={<Map />} title="Parcelas en mapa" text="Dibuja el perimetro de la parcela, calcula area aproximada y registra el centro geografico." />
           <Feature icon={<BarChart3 />} title="Contexto operativo" text="Relaciona muestras, clima, riego y energia para construir recomendaciones futuras." />
         </div>
@@ -90,7 +90,7 @@ export function PublicLanding() {
         <Leaf size={30} />
         <div>
           <h2>Empieza con el usuario demo o crea una cuenta nueva.</h2>
-          <p>El producto ya esta conectado al backend local para probar el flujo completo.</p>
+          <p>El producto esta preparado para probar el flujo completo desde el dashboard.</p>
         </div>
         <Link className="primaryLink" href="/login">
           Entrar a NEXO
