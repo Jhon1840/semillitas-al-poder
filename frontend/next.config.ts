@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+1import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true

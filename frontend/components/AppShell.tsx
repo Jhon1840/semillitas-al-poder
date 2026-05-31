@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bot, ChevronLeft, ChevronRight, ImageUp, LayoutDashboard, LogOut, Sprout, UserCircle2 } from "lucide-react";
+import { Bot, ChevronLeft, ChevronRight, ImageUp, LayoutDashboard, LogOut, MapPinned, Sprout, UserCircle2 } from "lucide-react";
 
 type AppShellProps = {
   children: ReactNode;
@@ -13,7 +13,8 @@ type AppShellProps = {
 };
 
 const menuItems = [
-  { href: "/dashboard", label: "Dashboard", description: "Parcelas y mapa", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", description: "Resumen del sistema", icon: LayoutDashboard },
+  { href: "/irrigation", label: "Mapa de riego", description: "Parcelas y FAO-56", icon: MapPinned },
   { href: "/upload", label: "Verificar semillas", description: "Productor, lote y analisis", icon: ImageUp },
   { href: "/assistant", label: "Asistente IA", description: "Chat con Gemini", icon: Bot },
 ];
